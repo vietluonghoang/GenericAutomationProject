@@ -1,27 +1,32 @@
 package gui;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.io.IOException;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import org.openqa.selenium.WebDriver;
 
 import controllers.DriverCenter;
-import controllers.ResultCrawler;
-import drivers.RunningDriver;
-import entities.DailyRecord;
 import entities.GeneralSettings;
-
-import java.awt.BorderLayout;
-import javax.swing.JButton;
 
 public class MainGUI {
 
 	private JFrame frame;
 	private JButton btnStart;
-	private ArrayList<DailyRecord> records;
+	private String profilePath = "";
+	private WebDriver driver;
 
 	/**
 	 * Launch the application.
@@ -54,6 +59,7 @@ public class MainGUI {
 		frame.setBounds(100, 100, 450, 300);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		// init top panel
 		JPanel panel = new JPanel();
 		frame.getContentPane().add(panel, BorderLayout.NORTH);
 
@@ -67,17 +73,68 @@ public class MainGUI {
 			}
 		});
 		panel.add(btnStart);
+
+		// init main panel
+
+		JPanel mainPanel = new JPanel();
+		mainPanel.setLayout(new FlowLayout());
+		frame.getContentPane().add(mainPanel, BorderLayout.CENTER);
+		JPanel profilePathPanel = new JPanel();
+		profilePathPanel.setLayout(new FlowLayout());
+		mainPanel.add(profilePathPanel);
+		JLabel lbProfilePath = new JLabel("Profile Path");
+		JTextField txtProfilePath = new JTextField();
+		txtProfilePath.setPreferredSize(new Dimension(300, 20));
+		txtProfilePath.getDocument().addDocumentListener((DocumentListener) new DocumentListener() {
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				// TODO Auto-generated method stub
+				updateProfilePath();
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent arg0) {
+				// TODO Auto-generated method stub
+				updateProfilePath();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent arg0) {
+				// TODO Auto-generated method stub
+				updateProfilePath();
+			}
+
+			public void updateProfilePath() {
+				profilePath = txtProfilePath.getText();
+			}
+
+		});
+		profilePathPanel.add(lbProfilePath);
+		profilePathPanel.add(txtProfilePath);
+		JPanel commentContentPanel = new JPanel();
+		commentContentPanel.setLayout(new FlowLayout());
+		mainPanel.add(commentContentPanel);
+		JLabel lbCommentContent = new JLabel("Comment");
+		JTextField txtCommentContent = new JTextField();
+		txtCommentContent.setPreferredSize(new Dimension(300, 20));
+		commentContentPanel.add(lbCommentContent);
+		commentContentPanel.add(txtCommentContent);
 	}
 
 	private void startAction() {
 		if (!GeneralSettings.isStartedRunning) {
 			btnStart.setEnabled(false);
-			records = new ArrayList<>();
-			ResultCrawler crawler = new ResultCrawler(records);
-			Thread t1 = new Thread(crawler);
-			t1.setName("crawler");
-			t1.start();
 			GeneralSettings.isStartedRunning = true;
+			try {
+				if (profilePath.length() > 0) {
+					driver = DriverCenter.getNewFirefoxDriver(profilePath);
+				} else {
+					driver = DriverCenter.getNewFirefoxDriver();
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			btnStart.setText("Stop");
 			btnStart.setEnabled(true);
 		} else {
